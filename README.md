@@ -37,7 +37,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Assignment 2: Supabase profiles
 
-The original Hello World content is retained, with a link to `/profiles` for the database list.
+The homepage fetches profile rows from Supabase and renders one card per row.
 
 1. Run `supabase/profiles.sql` once in your Supabase project's SQL Editor. It creates
    fictional user profiles and grants the anonymous role read-only access with RLS.
@@ -50,12 +50,12 @@ The original Hello World content is retained, with a link to `/profiles` for the
 
    Use the anon key, never a service-role or secret key. `.env.local` is ignored
    by Git; do not commit it.
-3. Run `npm install`, then `npm run dev`, and open `http://localhost:3000/profiles`.
+3. Run `npm install`, then `npm run dev`, and open `http://localhost:3000`.
    Confirm that the four profile cards appear.
 4. Run `npm run lint` and `npm run build` before committing. Check `git status`
    and `git ls-files '.env*'` to confirm no environment files are tracked.
 5. Add the same two environment variables to the existing Vercel project for
    the deployment's environment, then deploy the new GitHub commit.
-6. Check deployment protection and open the deployment-specific URL followed
-   by `/profiles` in an Incognito window. Verify its source commit matches the
-   pushed commit, and submit that deployment-specific URL.
+6. Check deployment protection and open the deployment-specific URL in an
+   Incognito window. Verify its source commit matches the pushed commit, and
+   submit that deployment-specific URL.
