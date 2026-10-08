@@ -1,0 +1,19 @@
+/* eslint-disable @next/next/no-img-element -- Uploaded covers use expiring signed URLs. */
+import Link from 'next/link';
+import type {Event} from '@/lib/week4/types';
+import {nyDate,TAGS,eventEnd,eventPhase} from '@/lib/week4/types';
+import Vote from './week4-vote';
+export default function EventCard({event:e,signedIn,now,detail=false,rank}:{event:Event;signedIn:boolean;now:number;detail?:boolean;rank?:number}){
+ const phase=eventPhase(e,now),closed=eventEnd(e)<=now||e.hosting_status==='cancelled';
+ return <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+ {e.imageUrl? <img src={e.imageUrl} alt={`Cover for ${e.title}`} className="aspect-[16/9] w-full object-cover"/>:<div className="flex aspect-[16/9] items-end bg-gradient-to-br from-blue-100 via-indigo-100 to-amber-50 p-6"><span className="text-4xl font-bold tracking-tight text-blue-900/30">A new plan.<br/>A new friend.</span></div>}
+ <div className="p-6"><div className="mb-3 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-blue-50 px-2 py-1 text-blue-800">AI-generated proposal</span>{rank&&<span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-900">Popular #{rank}</span>}{e.hosting_status==='confirmed'&&<span className="rounded-full bg-green-100 px-2 py-1 text-green-900">Hosting confirmed</span>}{e.hosting_status==='undecided'&&<span className="rounded-full bg-slate-100 px-2 py-1 text-slate-600">Not confirmed</span>}<span className={`rounded-full px-2 py-1 ${phase==='Cancelled'?'bg-red-50 text-red-700':'bg-slate-100'}`}>{phase==='Previous'?'Ended':phase}</span></div>
+ <h2 className="text-xl font-bold">{detail?e.title:<Link href={`/events/${e.id}`} className="block rounded-xl bg-slate-100 px-4 py-3 text-slate-900 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">{e.title}</Link>}</h2><p className="mt-2 text-sm text-slate-500">Proposed by {e.creator}</p>
+ <p className={`mt-4 whitespace-pre-wrap text-slate-700 ${detail?'':'line-clamp-3'}`}>{e.description}</p>
+ {!detail&&<Link href={`/events/${e.id}`} aria-label={`View details for ${e.title}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:border-blue-600 hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">View details <span aria-hidden="true">→</span></Link>}
+ <dl className="my-5 grid gap-2 text-sm"><div><dt className="inline font-semibold">When: </dt><dd className="inline">{nyDate(e.starts_at)} · {e.duration_minutes} min</dd></div><div><dt className="inline font-semibold">Where: </dt><dd className="inline">{e.location} {e.format==='in_person'&&<a target="_blank" rel="noopener noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}${e.place_id?`&query_place_id=${encodeURIComponent(e.place_id)}`:''}`} className="underline">{e.place_id?"Map ↗":"Map search ↗"}</a>}</dd></div><div><dt className="inline font-semibold">Budget: </dt><dd className="inline">{e.budget===0?'Free':`~$${e.budget} / person`} · Up to {e.capacity} people</dd></div></dl>
+ <div className="mb-5 flex flex-wrap gap-2">{e.tags.map(t=><span key={t} className="rounded-md bg-slate-100 px-2 py-1 text-xs">{TAGS.find(x=>x.slug===t)?.label??t}</span>)}</div>
+ {e.hosting_details&&<div className="mb-5 rounded-xl bg-green-50 p-4"><h3 className="font-semibold">Hosting details</h3><p className="mt-2 whitespace-pre-wrap text-sm">{e.hosting_details}</p></div>}
+ <p className="mb-3 text-xs text-slate-500">Score {e.upvotes-e.downvotes}</p>
+ <Vote id={e.id} up={e.upvotes} down={e.downvotes} mine={e.myVote} closed={closed} signedIn={signedIn}/></div></article>;
+}

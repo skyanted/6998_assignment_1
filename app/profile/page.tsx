@@ -1,22 +1,12 @@
-import AccountNav from "@/app/components/account-nav";
-import { loadProfile } from "@/lib/profile";
-import SignInPrompt from "@/app/components/sign-in-prompt";
-import ProfileForm from "./profile-form";
-
-export default async function ProfilePage() {
-  const { user, profile, error } = await loadProfile();
-  if (!user) return <main className="mx-auto w-full max-w-xl px-6 py-12">
-    <AccountNav />
-    <h1 className="text-3xl font-bold">Profile</h1>
-    <SignInPrompt section="Profile" />
-  </main>;
-  const incomplete = !profile?.first_name?.trim() || !profile?.last_name?.trim();
-  return <main className="mx-auto w-full max-w-xl px-6 py-12">
-    <AccountNav />
-    <h1 className="mb-6 text-3xl font-bold">Profile</h1>
-    {error || !profile ? <p role="alert">Your profile could not be loaded. Please check the database setup and try again.</p> : <>
-      {incomplete && <p className="mb-6">Please add your first and last name to complete your profile.</p>}
-      <ProfileForm profile={profile} />
-    </>}
-  </main>;
+import Shell from '@/app/components/week4-shell';
+import SignInPrompt from '@/app/components/sign-in-prompt';
+import {context} from '@/lib/week4/data';
+import ProfileForm from './profile-form';
+export default async function ProfilePage(){
+ const result=await context().catch(()=>null);
+ if(!result)return <Shell section="Profile"><h1 className="text-3xl font-bold">Profile</h1><p role="alert" className="mt-6">Your account data could not be loaded. Please try again.</p></Shell>;
+ const {user,profile}=result;
+ if(!user)return <Shell section="Profile"><h1 className="text-3xl font-bold">Profile</h1><SignInPrompt section="Profile"/></Shell>;
+ const data=profile??{id:user.id,first_name:null,last_name:null,email:null,bio:'',occupation:null,city:null,avatar_path:null,published:false,tags:[]};
+ return <Shell section="Profile"><div className="mb-8"><h1 className="text-3xl font-bold">Your community profile</h1><p className="mt-3 text-slate-500">Your name, photo, introduction, and interests, all in one place.</p></div><ProfileForm profile={data}/></Shell>;
 }

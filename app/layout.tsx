@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hello World",
-  description: "A simple Hello World app",
+  title: "Campus Plans",
+  description: "AI activity proposals for Columbia students. Discover ideas, vote, and plan activities together.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

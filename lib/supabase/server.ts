@@ -2,13 +2,13 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function createAuthClient() {
+export async function createAuthClient(schema: "account" | "public" = "account") {
   const store = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      db: { schema: "account" },
+      db: { schema },
       cookies: {
         getAll: () => store.getAll(),
         setAll(values) {

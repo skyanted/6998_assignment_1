@@ -1,0 +1,34 @@
+'use client';
+import {useEffect,useState,type FormEvent} from 'react';
+import {useRouter} from 'next/navigation';
+import PublishForm from './publish-form';
+import PlanDetails from '@/app/components/week4-plan';
+import {TAGS,type Plan} from '@/lib/week4/types';
+export default function Generator({enabled}:{enabled:boolean}){
+ const router=useRouter();const [plan,setPlan]=useState<Plan|null>(null),[id,setId]=useState<number|null>(null),[pending,setPending]=useState(false),[message,setMessage]=useState(''),[minimumStart,setMinimumStart]=useState(''),[input,setInput]=useState(''),[format,setFormat]=useState('in_person'),[region,setRegion]=useState('Campus / Morningside Heights'),[tags,setTags]=useState<string[]>([]),[photo,setPhoto]=useState<File|null>(null);
+ const [photoPreview,setPhotoPreview]=useState<string|null>(null);
+ const [advanced,setAdvanced]=useState({format:false,area:false,interests:false,photo:false});
+ const [coverUrl,setCoverUrl]=useState<string|null>(null);
+ useEffect(()=>()=>{if(photoPreview)URL.revokeObjectURL(photoPreview);},[photoPreview]);
+ async function generate(e:FormEvent){e.preventDefault();setPending(true);setMessage('');setPlan(null);setId(null);
+ try{if(advanced.photo&&photo&&(!['image/jpeg','image/png','image/webp'].includes(photo.type)||photo.size>3*1024*1024))throw new Error('Choose a JPEG, PNG or WebP up to 3 MB.');
+ const body=new FormData();body.set('idea',input);body.set('format',advanced.format?format:'any');body.set('region',advanced.area?region:'any');body.set('tags',JSON.stringify(advanced.interests?tags:[]));if(advanced.photo&&photo)body.set('photo',photo);
+ const res=await fetch('/api/week4/generate',{method:'POST',body});const data=await res.json();if(!res.ok)throw new Error(data.error??'Generation failed.');setPlan(data.plan);setId(data.id);setMinimumStart(data.minimumStart);setCoverUrl(advanced.photo&&photoPreview?photoPreview:data.coverUrl??null);router.refresh();
+ }catch(e){setMessage(e instanceof Error?e.message:'Generation failed.');}finally{setPending(false);}
+ }
+ return <section className="rounded-2xl border bg-white p-6"><h2 className="text-2xl font-bold">Turn an idea into a plan</h2><p className="mb-6 mt-2 text-sm text-slate-500">AI handles the details. You only adjust the time before publishing.</p>
+ {!enabled&&<p className="mb-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">AI generation needs a Gemini API key. The rest of the community is ready to explore.</p>}
+ <form onSubmit={generate} className="space-y-5"><label className="block text-sm font-medium">Your idea (or choose interests / upload a photo)<textarea maxLength={1000} rows={3} value={input} onChange={e=>setInput(e.target.value)} placeholder="A low-budget activity for Columbia students who want to make new friends…" className="mt-2 w-full rounded-lg border p-3"/></label>
+ <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+ <h3 className="mb-3 text-sm font-semibold text-slate-700">Advanced options</h3>
+ <div className="space-y-3">
+ <div className="rounded-lg border border-slate-200 bg-white p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-medium"><input type="checkbox" checked={advanced.format} onChange={e=>setAdvanced({...advanced,format:e.target.checked})} aria-controls="activity-format-options"/>Activity format <span className="text-xs font-normal text-slate-500">Optional</span></label>{advanced.format&&<label id="activity-format-options" className="mt-3 block"><span className="sr-only">Activity format</span><select value={format} onChange={e=>setFormat(e.target.value)} className="w-full rounded-lg border p-3"><option value="in_person">In person</option><option value="online">Online</option></select></label>}</div>
+ <div className="rounded-lg border border-slate-200 bg-white p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-medium"><input type="checkbox" checked={advanced.area} onChange={e=>setAdvanced({...advanced,area:e.target.checked})} aria-controls="area-options"/>Area <span className="text-xs font-normal text-slate-500">Optional</span></label>{advanced.area&&<label id="area-options" className="mt-3 block"><span className="sr-only">Area</span><select value={region} onChange={e=>setRegion(e.target.value)} className="w-full rounded-lg border p-3">{['Campus / Morningside Heights','Manhattan','Anywhere in NYC'].map(x=><option key={x}>{x}</option>)}</select></label>}</div>
+ <div className="rounded-lg border border-slate-200 bg-white p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-medium"><input type="checkbox" checked={advanced.interests} onChange={e=>setAdvanced({...advanced,interests:e.target.checked})} aria-controls="interest-options"/>Interests <span className="text-xs font-normal text-slate-500">Optional</span></label>{advanced.interests&&<fieldset id="interest-options" className="mt-3"><legend className="mb-3 text-sm text-slate-500">Choose up to 3</legend><div className="flex flex-wrap gap-2">{TAGS.map(t=><label key={t.slug} className="rounded-full border px-3 py-2 text-sm"><input type="checkbox" className="mr-2" checked={tags.includes(t.slug)} disabled={!tags.includes(t.slug)&&tags.length===3} onChange={e=>setTags(e.target.checked?[...tags,t.slug]:tags.filter(x=>x!==t.slug))}/>{t.label}</label>)}</div></fieldset>}</div>
+ <div className="rounded-lg border border-slate-200 bg-white p-3"><label className="flex cursor-pointer items-center gap-2 text-sm font-medium"><input type="checkbox" checked={advanced.photo} onChange={e=>setAdvanced({...advanced,photo:e.target.checked})} aria-controls="photo-options"/>Inspiration photo <span className="text-xs font-normal text-slate-500">Optional</span></label>{advanced.photo&&<label id="photo-options" className="mt-3 block text-sm font-medium">Upload a photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const file=e.target.files?.[0]??null;setPhoto(file);setPhotoPreview(file?URL.createObjectURL(file):null);setPlan(null);setId(null);}} className="mt-2 block text-sm"/><span className="mt-2 block text-xs text-slate-500">Up to 3 MB. Your photo will be sent to Gemini to help generate the activity, and used as its public cover when you publish.</span></label>}</div>
+ </div></div>
+ <button disabled={pending||!enabled} className="rounded-full bg-blue-700 px-6 py-3 text-white disabled:opacity-50">{pending?'Generating…':plan?'Generate another idea':'Generate activity'}</button>{message&&<p role="alert" className="text-sm text-red-700">{message}</p>}</form>
+ {plan&&id&&<div className="mt-8 border-t pt-6"><PlanDetails plan={plan} imageUrl={coverUrl}/><p className="my-4 text-xs text-slate-500">Only the activity date and time can be changed before publishing.</p>
+ <PublishForm key={id} id={id} time={plan.starts_at} minimumStart={minimumStart}/></div>}
+ </section>;
+}

@@ -10,7 +10,8 @@ export async function GET(request: Request) {
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase.from("profiles")
+        await supabase.schema("public").rpc("week4_profile_save");
+        const { data: profile } = await supabase.schema("public").from("week4_profiles")
           .select("first_name, last_name").eq("id", user.id).single();
         const complete = profile?.first_name?.trim() && profile?.last_name?.trim();
         return NextResponse.redirect(new URL(complete ? "/dashboard" : "/profile", url.origin));
