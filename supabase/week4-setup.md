@@ -67,3 +67,21 @@ one vote per user, vote history, organizer decisions, cancellation/end boundarie
 Popular ranking, tracking filters and all sixteen advanced-option combinations.
 Real provider tests are separate and should always have an explicit call cap.
 Commit, push and deploy only when the user authorizes them.
+
+## Discovery UI revision
+
+Apply `week4-discovery.sql` once to existing Week 4 databases. It adds a read-only public feed with an explicit display-field allowlist and published-cover access; base tables and personal records stay private. Signed-in users can generate before completing a profile; publishing still requires first and last name. The fresh-install `week4.sql` includes this revision.
+
+Navigation is Home / Create / Mine. Home has Upcoming and Ongoing / Previous. Mine contains My activities, Upvoted, and Profile. Members is hidden. Legacy /dashboard, /profile and /previous routes forward to the matching current page.
+
+OAuth always returns to the current origin's `/auth/callback`. `/auth/return` stores an allowlisted internal destination in a short-lived HttpOnly cookie, so login returns to the interrupted task without adding callback query parameters. Create stores idea/preferences in session storage before login; uploads require reselection. It never automatically generates or votes after login.
+
+## Generation limits
+
+Apply `week4-generation-limits.sql` after the earlier incremental scripts. Each account can start up to 20 generations in a rolling 24 hours, with at least 10 seconds between starts. Cooldown and daily-limit errors have separate messages. All attempts continue to count toward the daily limit. The fresh schema includes this update.
+
+The preview’s Generate another button returns to the idea editor without calling AI. The user edits and explicitly presses Generate event to create another saved draft.
+
+## Event detail access
+
+Apply `week4-private-event-details.sql` after the earlier incremental scripts. The public feed returns only card previews: a shortened description, venue name and display/status fields. Hosting details, full addresses, map place IDs, budget and capacity are excluded. Event detail pages check the authenticated user on the server before fetching the full event. A logged-out visitor gets an in-page Sign in prompt, returning to that event after login. The fresh schema includes this update.

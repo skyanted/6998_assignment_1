@@ -92,4 +92,50 @@ await db.exec('set role anon');
 for(const table of ['week4_events','week4_upvote_history']){let denied=false;try{await db.query(`select * from public.${table}`);}catch{denied=true;}if(!denied)throw Error('Anonymous read allowed');}
 let denied=false;try{await db.query(`select public.week4_vote(${second},1)`);}catch{denied=true;}if(!denied)throw Error('Anonymous vote allowed');
 console.log('Anonymous business reads and mutations denied: PASS');
-await db.exec('reset role');await db.close();
+await db.exec('reset role');
+await db.exec(`update public.week4_events set description=repeat('Full plan detail. ',50) where id=${eid}`);
+await db.exec('set role anon');
+const publicFeed=(await db.query('select public.week4_public_feed() feed')).rows[0].feed;
+if(!publicFeed.length||!publicFeed.some(e=>e.id===eid))throw Error('Public feed hides published activities');
+for(const e of publicFeed)for(const key of ['creator_id','generation_id','round_id','image_path','email','bio','avatar_path','prompt','inputs','original_output','myVote','wasUpvoted','hosting_details','budget','capacity','place_id','confirmed_at'])if(key in e)throw Error('Private field exposed: '+key);
+if(publicFeed.some(e=>Array.from(e.description).length>241))throw Error('Public feed includes a full event description');
+await db.exec('reset role');
+const fullPlan=(await asUser(a,`select description,hosting_details from public.week4_events where id=${eid}`)).rows[0];
+if(fullPlan.description.length<=240||!fullPlan.hosting_details)throw Error('Authenticated full event data was removed');
+console.log('Public previews exclude hosting details; authenticated full plans retained: PASS');
+const c='10000000-0000-4000-8000-000000000003';await db.exec(`insert into auth.users values('${c}')`);
+const unnamed=(await asUser(c,`select public.week4_begin_generation('{}','Anonymous name, genuine prompt','test',null) gid`)).rows[0].gid;
+await asUser(c,`select public.week4_finish_generation(${unnamed},'${JSON.stringify(output)}',null,'test-proof')`);
+await rejects(c,`select public.week4_publish(${unnamed},'${eventTime}')`,'Publishing requires a name, generating does not');
+await asUser(c,`select public.week4_profile_save('{"first_name":"New","last_name":"Member"}')`);
+await asUser(c,`select public.week4_publish(${unnamed},'${eventTime}')`);
+console.log('Public published feed, private fields excluded, deferred profile completion: PASS');
+await db.exec(`update public.week4_profiles set avatar_path=id::text||'/profile.jpg' where id in ('${a}','${b}')`);
+await db.exec('set role anon');
+const organizer=(await db.query(`select public.week4_public_organizer(${eid}) profile`)).rows[0].profile;
+if(organizer.name!=='Test One'||!Array.isArray(organizer.tags))throw Error('Published organizer profile missing');
+for(const key of ['id','email','avatar_path','created_at','published'])if(key in organizer)throw Error('Private organizer field exposed: '+key);
+if((await db.query('select public.week4_public_organizer(999999) profile')).rows[0].profile!==null)throw Error('Unknown event resolves an organizer');
+const avatarAccess=(await db.query(`select private.week4_public_avatar('${a}/profile.jpg') published,private.week4_public_avatar('${b}/profile.jpg') unpublished`)).rows[0];
+if(!avatarAccess.published||avatarAccess.unpublished)throw Error('Avatar publication boundary incorrect');
+await db.exec('reset role');
+console.log('Organizer display-field allowlist, unknown-event privacy and avatar visibility: PASS');
+// Isolate rate-limit boundary fixtures from the rest of the application checks.
+const d='10000000-0000-4000-8000-000000000004';await db.exec(`insert into auth.users values('${d}')`);
+async function expectLimit(message){
+ let actual='';try{await asUser(d,`select public.week4_begin_generation('{}','Limit boundary fixture','test',null)`);}catch(error){actual=error.message;}
+ if(!actual.includes(message))throw Error('Unexpected generation-limit message: '+actual);
+}
+await asUser(d,`select public.week4_begin_generation('{}','Initial boundary fixture','test',null)`);
+await expectLimit('10 seconds between generations');
+await db.exec(`update public.week4_ai_generations set created_at=now()-interval '11 seconds' where user_id='${d}'`);
+await asUser(d,`select public.week4_begin_generation('{}','Allowed after eleven seconds','test',null)`);
+await db.exec(`update public.week4_ai_generations set created_at=now()-interval '9 seconds' where user_id='${d}'`);
+await expectLimit('10 seconds between generations');
+await db.exec(`update public.week4_ai_generations set created_at=now()-interval '1 hour' where user_id='${d}'; insert into public.week4_ai_generations(user_id,inputs,prompt,model,created_at) select '${d}','{}','Daily limit fixture','test',now()-interval '1 hour' from generate_series(1,17)`);
+await asUser(d,`select public.week4_begin_generation('{}','Twentieth generation allowed','test',null)`);
+await expectLimit('20 events in 24 hours');
+await db.exec(`update public.week4_ai_generations set created_at=now()-interval '25 hours' where user_id='${d}'`);
+await asUser(d,`select public.week4_begin_generation('{}','Allowed outside rolling day','test',null)`);
+console.log('10-second boundary, separate rolling-day error and expiry: PASS');
+await db.close();

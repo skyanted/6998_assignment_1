@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAuthClient } from "@/lib/supabase/server";
+import {cookies} from "next/headers";
+import {safeReturnTo} from "@/lib/week4/navigation";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -11,10 +13,10 @@ export async function GET(request: Request) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase.schema("public").rpc("week4_profile_save");
-        const { data: profile } = await supabase.schema("public").from("week4_profiles")
-          .select("first_name, last_name").eq("id", user.id).single();
-        const complete = profile?.first_name?.trim() && profile?.last_name?.trim();
-        return NextResponse.redirect(new URL(complete ? "/dashboard" : "/profile", url.origin));
+        const store=await cookies();
+        const destination=safeReturnTo(store.get('week4-return-to')?.value);
+        store.delete('week4-return-to');
+        return NextResponse.redirect(new URL(destination, url.origin));
       }
     }
   }

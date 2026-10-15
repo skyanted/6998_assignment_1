@@ -22,3 +22,33 @@ button, select { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .5; }
 input, textarea, select { background: white; color: #0f172a; }
 :focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* Use the activity area's available space, including room lost to the sidebar. */
+.activity-layout { container: activity-list / inline-size; }
+.activity-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+@container activity-list (min-width: 36rem) {
+  .activity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container activity-list (min-width: 54.5rem) {
+  .activity-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Fast transitions finish without flashing a loading icon. */
+.navigation-loading {
+  opacity: 0;
+  animation: reveal-navigation-loading 0s 180ms forwards;
+}
+@keyframes reveal-navigation-loading {
+  to { opacity: 1; }
+}

@@ -1,2 +1,2 @@
-import Feed from '@/app/components/week4-feed';
-export default function Previous(){return <Feed previous/>;}
+import {redirect} from 'next/navigation';
+export default function Previous(){redirect('/?view=history#activities');}

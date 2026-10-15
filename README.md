@@ -1,3 +1,13 @@
+# Campus plans
+
+Campus plans helps Columbia students do things together without having to plan everything themselves. A spark of an idea, a simple wish to spend time with others, a single sentence, or one photo can become an AI-generated event proposal with a suggested place and time. Text is not required when using a photo; users can also let AI choose.
+
+Users publish event proposals and vote on events they would join. Votes express community interest. Creators can see which ideas are popular and decide whether to host; popularity never automatically confirms an event. Hosting is confirmed separately by the creator.
+
+Use “event” for a scheduled community gathering, “event proposal” before hosting is confirmed, and “activity” for what people do at an event (such as gaming or hiking). Keep product copy short, concrete, and focused on these user benefits. Keep implementation notes and internal workflow explanations out of the interface.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
