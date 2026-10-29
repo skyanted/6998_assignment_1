@@ -12,7 +12,10 @@ export async function GET(request: Request) {
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.schema("public").rpc("week4_profile_save");
+        const allowed=await supabase.schema("public").rpc("week7_signup_allowed");
+        if(allowed.error||!allowed.data){await supabase.auth.signOut({scope:'local'});return NextResponse.redirect(new URL('/login?error=signup',url.origin));}
+        const saved=await supabase.schema("public").rpc("week4_profile_save");
+        if(saved.error){await supabase.auth.signOut({scope:'local'});return NextResponse.redirect(new URL('/login?error=callback',url.origin));}
         const store=await cookies();
         const destination=safeReturnTo(store.get('week4-return-to')?.value);
         store.delete('week4-return-to');

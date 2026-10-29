@@ -13,9 +13,6 @@ export async function publish(_state:ActionState,form:FormData):Promise<ActionSt
  const tags=await db.from('week4_member_interest_tags').select('tag_slug').eq('user_id',user.id);if(tags.error)throw new Error('Your profile could not be loaded.');
  const saved=await db.rpc('week4_profile_save',{details:{...profile.data,first_name:first,last_name:last},selected_tags:(tags.data??[]).map(t=>t.tag_slug)});if(saved.error)throw new Error(saved.error.message);}
  const {data:eventId,error}=await db.rpc('week4_publish',{gid,event_time:starts});if(error)throw new Error(error.message);
- const discarded=await db.from('week4_ai_generations').select('image_path').eq('user_id',user.id).eq('status','discarded').not('image_path','is',null);
- const paths=(discarded.data??[]).map(d=>d.image_path as string);
- if(paths.length)await db.storage.from('week4-event-images').remove(paths);
  revalidatePath('/');revalidatePath('/dashboard');revalidatePath('/previous');revalidatePath('/create');revalidatePath('/mine');return {message:'Published! Your event is now on Home. Your other drafts have been discarded.',ok:true,eventId};
  }catch(e){return {message:e instanceof Error?e.message:'Unable to publish.',ok:false};}
 }
